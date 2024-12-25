@@ -198,26 +198,36 @@ class SubscriptionViewSet(ListAPIView):
 
 
 class SubscribeView(views.APIView):
-    pagination_class = ReceiptPagination
     permission_classes = (IsAuthenticated,)
 
+    def get_author(self, pk):
+        return get_object_or_404(User, pk=pk)
+
     def post(self, request, pk):
-        author = get_object_or_404(User, pk=pk)
-        user = self.request.user
-        data = {'author': author.id, 'user': user.id}
+        author = self.get_author(pk)
+        user = request.user
+        if user == author:
+            return Response(
+                {'detail': 'Нельзя подписаться на самого себя.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         serializer = SubscribeSerializer(
-            data=data, context={'request': request}
+            data={'author': author.id, 'user': user.id},
+            context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def delete(self, request, pk):
-        author = get_object_or_404(User, pk=pk)
-        user = self.request.user
+        author = self.get_author(pk)
+        user = request.user
         subscription = Subscription.objects.filter(
             user=user, author=author).first()
         if not subscription:
-            raise ValidationError({'detail': 'Подписка не существует.'})
+            return Response(
+                {'detail': 'Подписка не существует.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         subscription.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

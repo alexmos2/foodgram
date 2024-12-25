@@ -1,7 +1,6 @@
 import hashlib
 
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.base_user import BaseUserManager
@@ -24,8 +23,6 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_superuser', True)
 
         return self.create_user(email, password, **extra_fields)
-
-# User = get_user_model()
 
 
 class User(AbstractUser):
@@ -120,7 +117,8 @@ class Receipt(models.Model):
         auto_now_add=True,
         db_index=True)
     # другие поля
-    short_link = models.CharField(max_length=20, blank=True, null=True, unique=True)  # Короткая ссылка
+    short_link = models.CharField(
+        max_length=20, blank=True, null=True, unique=True)  # Короткая ссылка
 
     def save(self, *args, **kwargs):
         # Сначала вызываем родительский метод сохранения

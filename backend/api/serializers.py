@@ -227,17 +227,17 @@ class ReceiptSerializer(serializers.ModelSerializer):
         ingredients = IngredientReceipt.objects.filter(receipt=obj)
         return IngredientReceiptSerializer(ingredients, many=True).data
 
-    def in_list(self, obj, model):
+    def is_included(self, obj, model):
         request = self.context.get('request')
         if request is None or request.user.is_anonymous:
             return False
         return model.objects.filter(user=request.user, receipt=obj).exists()
 
     def get_is_favorited(self, obj):
-        return self.in_list(obj, Favorite)
+        return self.is_included(obj, Favorite)
 
     def get_is_in_shopping_cart(self, obj):
-        return self.in_list(obj, ShoppingList)
+        return self.is_included(obj, ShoppingList)
 
 
 class IngredientSerializer(serializers.ModelSerializer):
