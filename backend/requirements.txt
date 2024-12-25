@@ -1,0 +1,16 @@
+Django==3.2.3
+djangorestframework==3.12.4
+django-filter
+djoser==2.1.0
+webcolors==1.11.1
+Pillow
+pytest
+pytest-django==4.4.0
+pytest-pythonpath==0.7.3
+python-dotenv==0.20.0
+gunicorn==20.1.0
+django-cors-headers==3.13.0
+psycopg2-binary
+PyYAML
+django-core
+pyshorteners
