@@ -1,10 +1,12 @@
 import os
 import django
 import csv
-from api.models import Ingredient, Tag
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'foodgram_backend.settings')
 django.setup()
+
+from api.models import Ingredient, Tag
+
 
 csv_file_path = 'ingredients.csv'
 
