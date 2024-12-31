@@ -75,6 +75,7 @@ jobs:
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
+          sudo docker image rm $(sudo docker image ls -f "dangling=true" -q)
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec backend python import_csv.py
           sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic
