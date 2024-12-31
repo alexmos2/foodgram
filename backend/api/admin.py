@@ -39,7 +39,7 @@ class AdminIngredient(admin.ModelAdmin):
         'name',
         'measurement_unit',
     )
-    search_fields = ('name')
+    search_fields = ('name',)
 
 
 class AdminReceipt(admin.ModelAdmin):
@@ -52,7 +52,7 @@ class AdminReceipt(admin.ModelAdmin):
         'name',
         'author__username',
     )
-    list_filter = ('tag',)
+    list_filter = ('tags',)
     readonly_fields = ('favorite_count',)
 
     def favorite_count(self, instance):
