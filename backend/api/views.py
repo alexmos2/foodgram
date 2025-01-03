@@ -41,22 +41,23 @@ class ReceiptShortLinkView(APIView):
 
 
 class ReceiptMixin:
-    def add_receipt(self, model, request, pk):
+    def add_receipt(self, request, pk, table):
         receipt = get_object_or_404(Receipt, pk=pk)
         user = request.user
-        if model.objects.filter(receipt=receipt, user=user).exists():
-            raise ValidationError({'detail': 'Рецепт уже добавлен'})
-        model.objects.create(receipt=receipt, user=user)
+        if table.objects.filter(receipt=receipt, user=user).exists():
+            raise ValidationError({'detail': 'Рецепт уже есть в этом списке'})
+        table.objects.create(receipt=receipt, user=user)
         serializer = ShortReceiptSerializer(receipt)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete_receipt(self, model, request, pk):
+    def delete_receipt(self, request, pk, table):
         receipt = get_object_or_404(Receipt, pk=pk)
         user = request.user
-        obj = model.objects.filter(user=user, receipt=receipt).first()
-        if not obj:
+        deleting_object = table.objects.filter(
+            user=user, receipt=receipt).first()
+        if not deleting_object:
             raise ValidationError({'detail': 'Объект не существует'})
-        obj.delete()
+        deleting_object.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -119,9 +120,9 @@ class ReceiptViewSet(viewsets.ModelViewSet, ReceiptMixin):
     )
     def favorite(self, request, pk=None):
         if request.method == 'POST':
-            return self.add_receipt(Favorite, request, pk)
+            return self.add_receipt(request, pk, Favorite)
         else:
-            return self.delete_receipt(Favorite, request, pk)
+            return self.delete_receipt(request, pk, Favorite)
 
     @action(
         detail=False,
@@ -160,9 +161,9 @@ class ReceiptViewSet(viewsets.ModelViewSet, ReceiptMixin):
     )
     def shopping_cart(self, request, pk):
         if request.method == 'POST':
-            return self.add_receipt(ShoppingList, request, pk)
+            return self.add_receipt(request, pk, ShoppingList)
         else:
-            return self.delete_receipt(ShoppingList, request, pk)
+            return self.delete_receipt(request, pk, ShoppingList)
 
 
 class TagViewSet(mixins.ListModelMixin,
