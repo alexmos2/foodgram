@@ -1,6 +1,5 @@
 from django.contrib import admin
 
-# Register your models here.
 
 from .models import (
     Subscription, User, Tag, Receipt, Ingredient, ShoppingList, Favorite)
@@ -46,7 +45,10 @@ class AdminReceipt(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
-        'author'
+        'author',
+        'tags',
+        'ingredients',
+        'favorite_count'
     )
     search_fields = (
         'name',
