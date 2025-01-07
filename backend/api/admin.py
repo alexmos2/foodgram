@@ -46,8 +46,8 @@ class AdminReceipt(admin.ModelAdmin):
         'id',
         'name',
         'author',
-        'tags',
-        'ingredients',
+        'get_tags',
+        'get_ingredients',
         'favorite_count'
     )
     search_fields = (
@@ -59,6 +59,15 @@ class AdminReceipt(admin.ModelAdmin):
 
     def favorite_count(self, instance):
         return instance.favorites_of_users.count()
+
+    def get_tags(self, obj):
+        return ", ".join([tag.name for tag in obj.tags.all()])
+    get_tags.short_description = 'Tags'
+
+    def get_ingredients(self, obj):
+        return ", ".join(
+            [ingredient.name for ingredient in obj.ingredients.all()])
+    get_ingredients.short_description = 'Ingredients'
 
 
 class AdminFavorite(admin.ModelAdmin):
