@@ -65,9 +65,17 @@ class ShortLinkRedirectView(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, short_link):
+        try:
+            receipt = Receipt.objects.get(short_link=short_link)
+            return HttpResponseRedirect(f'/recipes/{receipt.id}/')
+        except Receipt.DoesNotExist:
+            return Response(
+                {"error": "Receipt not found", "short_link": short_link},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         # receipt = get_object_or_404(Receipt, short_link=short_link)
         # return HttpResponseRedirect(f'/recipes/{receipt.id}/')
-        return HttpResponseRedirect(f'/recipes/1/')
+        # return HttpResponseRedirect('/recipes/1/')
 
 
 class UserAvatarViewSet(viewsets.ModelViewSet):
