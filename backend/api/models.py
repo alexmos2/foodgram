@@ -1,16 +1,17 @@
 import hashlib
 
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 from users.models import User
+from .constants import MIN_AMOUNT, MAX_AMOUNT, MAX_CHAR_LENGTH
 
 
 class Tag(models.Model):
     name = models.CharField(
-        max_length=64, unique=True, verbose_name='Название')
+        max_length=MAX_CHAR_LENGTH, unique=True, verbose_name='Название')
     slug = models.SlugField(
-        max_length=64, unique=True, verbose_name='slug')
+        max_length=MAX_CHAR_LENGTH, unique=True, verbose_name='slug')
 
     class Meta:
         verbose_name = 'Тег'
@@ -21,9 +22,10 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=64, verbose_name='Название')
+    name = models.CharField(
+        max_length=MAX_CHAR_LENGTH, verbose_name='Название')
     measurement_unit = models.CharField(
-        max_length=64, verbose_name='Единица измерения')
+        max_length=MAX_CHAR_LENGTH, verbose_name='Единица измерения')
 
     class Meta:
         verbose_name = 'Ингредиент'
@@ -41,7 +43,8 @@ class Receipt(models.Model):
         related_name='author_receipts',
         verbose_name='Автор рецепта'
     )
-    name = models.CharField(max_length=64, verbose_name='Название')
+    name = models.CharField(
+        max_length=MAX_CHAR_LENGTH, verbose_name='Название')
     image = models.ImageField(
         upload_to='recipes/',
         verbose_name='Изображение'
@@ -63,29 +66,26 @@ class Receipt(models.Model):
         null=False,
         verbose_name='Время приготовления',
         validators=(
-            MinValueValidator(1, 'Минимальное время: 1 минута'),
+            MinValueValidator(
+                MIN_AMOUNT, f'Минимальное время готовки: {MIN_AMOUNT} минут'),
+            MaxValueValidator(
+                MAX_AMOUNT, f'Максимальное время готовки: {MAX_AMOUNT} минут')
         )
     )
     pub_date = models.DateTimeField(
         'Дата публикации',
         auto_now_add=True,
         db_index=True)
-    # другие поля
     short_link = models.CharField(
-        max_length=20, blank=True, null=True, unique=True)  # Короткая ссылка
+        max_length=MAX_CHAR_LENGTH, blank=True, null=True, unique=True)
 
     def save(self, *args, **kwargs):
-        # Сначала вызываем родительский метод сохранения
         super().save(*args, **kwargs)
-
-        # Если короткая ссылка еще не создана, генерируем и сохраняем
         if not self.short_link:
             self.short_link = self.generate_short_link()
-            # Повторное сохранение, чтобы зафиксировать короткую ссылку
             super().save(update_fields=["short_link"])
 
     def generate_short_link(self):
-        # Генерация короткой ссылки на основе уникального идентификатора
         unique_string = f"{self.id}{self.name}"
         return hashlib.md5(unique_string.encode()).hexdigest()[:8]
 
@@ -111,7 +111,14 @@ class IngredientReceipt(models.Model):
         related_name='receipts',
         verbose_name='Ингредиенты'
     )
-    amount = models.IntegerField('Число')
+    amount = models.PositiveIntegerField(
+        'Число', validators=(
+            MinValueValidator(
+                MIN_AMOUNT, f'Минимальное количество: {MIN_AMOUNT}'),
+            MaxValueValidator(
+                MAX_AMOUNT, f'Максимальное количество: {MAX_AMOUNT}')
+        )
+    )
 
     class Meta:
         constraints = (
