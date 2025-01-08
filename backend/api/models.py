@@ -3,6 +3,8 @@ import hashlib
 from django.db import models
 from django.core.validators import MinValueValidator
 
+from users.models import User
+
 
 class Tag(models.Model):
     name = models.CharField(
