@@ -83,10 +83,10 @@ class Receipt(models.Model):
         super().save(*args, **kwargs)
         if not self.short_link:
             self.short_link = self.generate_short_link()
-            super().save(update_fields=["short_link"])
+            super().save(update_fields=['short_link'])
 
     def generate_short_link(self):
-        unique_string = f"{self.id}{self.name}"
+        unique_string = f'{self.id}{self.name}'
         return hashlib.md5(unique_string.encode()).hexdigest()[:8]
 
     class Meta:
