@@ -2,18 +2,7 @@ from django.contrib import admin
 
 
 from .models import (
-    Subscription, User, Tag, Receipt, Ingredient, ShoppingList, Favorite)
-
-
-class AdminUser(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'username',
-        'first_name',
-        'last_name',
-        'email',
-    )
-    search_fields = ('username', 'email')
+    Subscription, Tag, Receipt, Ingredient, ShoppingList, Favorite)
 
 
 class AdminSub(admin.ModelAdmin):
@@ -86,7 +75,6 @@ class AdminShoppingList(admin.ModelAdmin):
     )
 
 
-admin.site.register(User, AdminUser)
 admin.site.register(Subscription, AdminSub)
 admin.site.register(Tag, AdminTag)
 admin.site.register(Ingredient, AdminIngredient)
