@@ -30,14 +30,14 @@ class ReceiptShortLinkView(APIView):
         receipt = get_object_or_404(Receipt, pk=pk)
         if receipt.short_link:
             short_url = request.build_absolute_uri(
-                f'/api/short/{receipt.short_link}')
+                f'/short/{receipt.short_link}')
             return Response(
-                {"short-link": short_url}, status=status.HTTP_200_OK)
+                {'short-link': short_url}, status=status.HTTP_200_OK)
         receipt.short_link = receipt.generate_short_link()
         receipt.save()
         short_url = request.build_absolute_uri(
-            f'/api/short/{receipt.short_link}')
-        return Response({"short-link": short_url}, status=status.HTTP_200_OK)
+            f'/short/{receipt.short_link}')
+        return Response({'short-link': short_url}, status=status.HTTP_200_OK)
 
 
 class ReceiptMixin:
@@ -137,14 +137,14 @@ class ReceiptViewSet(viewsets.ModelViewSet, ReceiptMixin):
             'ingredient__name'
         ).annotate(ingredient_total=Sum('amount'))
         file_name = 'shopping_list.txt'
-        header = "{:<30} {:<20} {:<10}".format(
-            "Ингредиент", "Мера измерения", "Количество")
-        lines = [header, "-" * len(header)]  # Заголовок и разделитель
+        header = '{:<30} {:<20} {:<10}'.format(
+            'Ингредиент', 'Мера измерения', 'Количество')
+        lines = [header, '-' * len(header)]  # Заголовок и разделитель
         for ingredient in ingredients:
             name = ingredient['ingredient__name']
             measurement_unit = ingredient['ingredient__measurement_unit']
             amount = ingredient['ingredient_total']
-            line = "{:<30} {:<20} {:<10}".format(
+            line = '{:<30} {:<20} {:<10}'.format(
                 name, measurement_unit, amount)
             lines.append(line)
         lines.append('\nAlexMos Production')
