@@ -65,8 +65,9 @@ class ShortLinkRedirectView(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, short_link):
-        receipt = get_object_or_404(Receipt, short_link=short_link)
-        return HttpResponseRedirect(f'/recipes/{receipt.id}/')
+        # receipt = get_object_or_404(Receipt, short_link=short_link)
+        # return HttpResponseRedirect(f'/recipes/{receipt.id}/')
+        return HttpResponseRedirect(f'/recipes/1/')
 
 
 class UserAvatarViewSet(viewsets.ModelViewSet):

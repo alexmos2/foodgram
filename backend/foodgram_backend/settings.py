@@ -14,7 +14,7 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '89.169.161.24,taskialexmos.zapto.org').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,89.169.161.24,taskialexmos.zapto.org').split(',')
 # ALLOWED_HOSTS = ['89.169.161.24', 'taskialexmos.zapto.org']
 
 INSTALLED_APPS = [
