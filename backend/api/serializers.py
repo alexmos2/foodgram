@@ -66,15 +66,6 @@ class MyUserSerializer(UserSerializer):
             return False
         return request.user.following.filter(author=obj).exists()
 
-    def to_representation(self, instance):
-        request = self.context.get('request')
-        if request:
-            if request.path.endswith('/users/me/'):
-                if not request.user.is_authenticated:
-                    raise NotAuthenticated(
-                        detail='Authentication credentials were not provided.')
-        return super().to_representation(instance)
-
 
 class MyUserCreateSerializer(UserCreateSerializer):
     class Meta(UserCreateSerializer.Meta):
