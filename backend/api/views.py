@@ -28,13 +28,9 @@ class ReceiptShortLinkView(APIView):
 
     def get(self, request, pk):
         receipt = get_object_or_404(Receipt, pk=pk)
-        if receipt.short_link:
-            short_url = request.build_absolute_uri(
-                f'/short/{receipt.short_link}')
-            return Response(
-                {'short-link': short_url}, status=status.HTTP_200_OK)
-        receipt.short_link = receipt.generate_short_link()
-        receipt.save()
+        if not receipt.short_link:
+            receipt.short_link = receipt.generate_short_link()
+            receipt.save()
         short_url = request.build_absolute_uri(
             f'/short/{receipt.short_link}')
         return Response({'short-link': short_url}, status=status.HTTP_200_OK)
@@ -65,17 +61,8 @@ class ShortLinkRedirectView(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, short_link):
-        try:
-            receipt = Receipt.objects.get(short_link=short_link)
-            return HttpResponseRedirect(f'/recipes/{receipt.id}/')
-        except Receipt.DoesNotExist:
-            return Response(
-                {"error": "Receipt not found", "short_link": short_link},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        # receipt = get_object_or_404(Receipt, short_link=short_link)
-        # return HttpResponseRedirect(f'/recipes/{receipt.id}/')
-        # return HttpResponseRedirect('/recipes/1/')
+        receipt = get_object_or_404(Receipt, short_link=short_link)
+        return HttpResponseRedirect(f'/recipes/{receipt.id}/')
 
 
 class UserAvatarViewSet(viewsets.ModelViewSet):
@@ -124,14 +111,15 @@ class ReceiptViewSet(viewsets.ModelViewSet, ReceiptMixin):
 
     @action(
         detail=True,
-        methods=('post', 'delete'),
+        methods=('post'),
         permission_classes=(IsAuthenticated,)
     )
     def favorite(self, request, pk=None):
-        if request.method == 'POST':
-            return self.add_receipt(request, pk, Favorite)
-        else:
-            return self.delete_receipt(request, pk, Favorite)
+        return self.add_receipt(request, pk, Favorite)
+
+    @favorite.mapping.delete
+    def delete_favorite(self, request, pk=None):
+        return self.delete_receipt(request, pk, Favorite)
 
     @action(
         detail=False,
@@ -165,14 +153,15 @@ class ReceiptViewSet(viewsets.ModelViewSet, ReceiptMixin):
 
     @action(
         detail=True,
-        methods=('post', 'delete'),
+        methods=('post'),
         permission_classes=(IsAuthenticated,)
     )
     def shopping_cart(self, request, pk):
-        if request.method == 'POST':
-            return self.add_receipt(request, pk, ShoppingList)
-        else:
-            return self.delete_receipt(request, pk, ShoppingList)
+        return self.add_receipt(request, pk, ShoppingList)
+
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, pk):
+        return self.delete_receipt(request, pk, ShoppingList)
 
 
 class TagViewSet(mixins.ListModelMixin,
