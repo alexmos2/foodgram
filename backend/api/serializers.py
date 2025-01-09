@@ -1,5 +1,3 @@
-import base64
-from django.core.files.base import ContentFile
 from rest_framework import serializers, validators
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from django.db import transaction
@@ -7,15 +5,7 @@ from rest_framework.exceptions import NotAuthenticated
 
 from .models import (Tag, Ingredient, Receipt, IngredientReceipt,
                      User, Favorite, ShoppingList, Subscription)
-
-
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-        return super().to_internal_value(data)
+from .fields import Base64ImageField
 
 
 class UserAvatarSerializer(serializers.ModelSerializer):
@@ -36,13 +26,12 @@ class IngredientReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = IngredientReceipt
         fields = ('id', 'name', 'measurement_unit', 'amount')
-
-    validators = (
-        validators.UniqueTogetherValidator(
-            queryset=IngredientReceipt.objects.all(),
-            fields=('ingredient', 'receipt')
-        ),
-    )
+        validators = (
+            validators.UniqueTogetherValidator(
+                queryset=IngredientReceipt.objects.all(),
+                fields=('ingredient', 'receipt')
+            ),
+        )
 
     def __str__(self):
         return f'{self.ingredient} содержится в {self.receipt}'
@@ -50,7 +39,6 @@ class IngredientReceiptSerializer(serializers.ModelSerializer):
 
 class AddIngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    amount = serializers.IntegerField()
 
     class Meta:
         model = IngredientReceipt
@@ -76,9 +64,7 @@ class MyUserSerializer(UserSerializer):
         request = self.context.get('request')
         if request is None or request.user.is_anonymous:
             return False
-        return Subscription.objects.filter(
-            user=request.user, author=obj
-        ).exists()
+        return request.user.following.filter(author=obj).exists()
 
     def to_representation(self, instance):
         request = self.context.get('request')
@@ -86,7 +72,7 @@ class MyUserSerializer(UserSerializer):
             if request.path.endswith('/users/me/'):
                 if not request.user.is_authenticated:
                     raise NotAuthenticated(
-                        detail="Authentication credentials were not provided.")
+                        detail='Authentication credentials were not provided.')
         return super().to_representation(instance)
 
 
@@ -143,7 +129,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.ReadOnlyField(
+        source='obj.author.author_receipts.count')
 
     class Meta:
         model = Subscription
@@ -161,26 +148,18 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        return Subscription.objects.filter(
-            author=obj.author, user=request.user
-        ).exists()
+        return request.user.following.filter(author=obj.author).exists()
 
     def get_recipes(self, obj):
         request = self.context.get('request')
+        queryset = obj.author.author_receipts
         if request.GET.get('recipes_limit'):
             receipt_limit = int(request.GET.get('recipes_limit'))
-            queryset = Receipt.objects.filter(
-                author=obj.author)[:receipt_limit]
-        else:
-            queryset = Receipt.objects.filter(
-                author=obj.author)
+            queryset = queryset[:receipt_limit]
         serializer = ShortReceiptSerializer(
             queryset, read_only=True, many=True
         )
         return serializer.data
-
-    def get_recipes_count(self, obj):
-        return obj.author.author_receipts.count()
 
     def get_avatar(self, obj):
         if obj.author.avatar:
@@ -208,7 +187,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
-    ingredients = serializers.SerializerMethodField()
+    ingredients = serializers.ReadOnlyField(
+        source='obj.ingredients_in_receipt')
     author = MyUserSerializer()
     tags = TagField(
         slug_field='id', queryset=Tag.objects.all(), many=True
@@ -222,10 +202,6 @@ class ReceiptSerializer(serializers.ModelSerializer):
             'is_favorited', 'is_in_shopping_cart'
         )
         read_only_fields = ('author',)
-
-    def get_ingredients(self, obj):
-        ingredients = IngredientReceipt.objects.filter(receipt=obj)
-        return IngredientReceiptSerializer(ingredients, many=True).data
 
     def is_included(self, obj, model):
         request = self.context.get('request')
@@ -296,12 +272,11 @@ class AddReceiptSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients', [])
         tags = validated_data.pop('tags', [])
-        if ingredients:
+        if ingredients and ingredients != []:
             instance.ingredients.clear()
             self.create_ingredients(ingredients, instance)
-        if tags:
-            instance.tags.clear()
-            instance.tags.set(tags)
+        if tags and tags != []:
+            instance.tags.set(tags, clear=True)
         return super().update(instance, validated_data)
 
     def validate(self, data):
@@ -326,10 +301,6 @@ class AddReceiptSerializer(serializers.ModelSerializer):
                 'Поле с ингредиентами должно иметь значение'
             )
         for ingredient in ingredients:
-            if int(ingredient['amount']) <= 0:
-                raise serializers.ValidationError(
-                    'Недопустимое отрицательное значение'
-                )
             if not isinstance(ingredient['amount'], int):
                 raise serializers.ValidationError(
                     'Недопустимое нецелое значение'
@@ -351,10 +322,6 @@ class AddReceiptSerializer(serializers.ModelSerializer):
         if not cooking_time:
             raise serializers.ValidationError(
                 'Поле с временем готовки не может быть пустым'
-            )
-        if cooking_time < 1:
-            raise serializers.ValidationError(
-                'Время приготовления не может быть меньше 1 минуты'
             )
         return data
 
