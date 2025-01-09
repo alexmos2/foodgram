@@ -111,7 +111,7 @@ class ReceiptViewSet(viewsets.ModelViewSet, ReceiptMixin):
 
     @action(
         detail=True,
-        methods=('post'),
+        methods=('post',),
         permission_classes=(IsAuthenticated,)
     )
     def favorite(self, request, pk=None):
@@ -153,7 +153,7 @@ class ReceiptViewSet(viewsets.ModelViewSet, ReceiptMixin):
 
     @action(
         detail=True,
-        methods=('post'),
+        methods=('post',),
         permission_classes=(IsAuthenticated,)
     )
     def shopping_cart(self, request, pk):
