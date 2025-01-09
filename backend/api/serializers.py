@@ -130,7 +130,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.ReadOnlyField(
-        source='obj.author.author_receipts.count')
+        source='author.author_receipts.count')
 
     class Meta:
         model = Subscription
@@ -152,7 +152,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def get_recipes(self, obj):
         request = self.context.get('request')
-        queryset = obj.author.author_receipts
+        queryset = obj.author.author_receipts.all()
         if request.GET.get('recipes_limit'):
             receipt_limit = int(request.GET.get('recipes_limit'))
             queryset = queryset[:receipt_limit]
@@ -187,8 +187,8 @@ class ReceiptSerializer(serializers.ModelSerializer):
     image = Base64ImageField(required=False, allow_null=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
-    ingredients = serializers.ReadOnlyField(
-        source='obj.ingredients_in_receipt')
+    ingredients = IngredientReceiptSerializer(
+        source='receipts', many=True)
     author = MyUserSerializer()
     tags = TagField(
         slug_field='id', queryset=Tag.objects.all(), many=True
@@ -262,9 +262,9 @@ class AddReceiptSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients', [])
         tags = validated_data.pop('tags', [])
         receipt = Receipt.objects.create(**validated_data)
-        if tags:
+        if tags and tags != []:
             receipt.tags.set(tags)
-        if ingredients:
+        if ingredients and ingredients != []:
             self.create_ingredients(ingredients, receipt)
         return receipt
 
