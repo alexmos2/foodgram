@@ -1,7 +1,6 @@
 from rest_framework import serializers, validators
 from djoser.serializers import UserSerializer, UserCreateSerializer
 from django.db import transaction
-from rest_framework.exceptions import NotAuthenticated
 
 from .models import (Tag, Ingredient, Receipt, IngredientReceipt,
                      User, Favorite, ShoppingList, Subscription)
