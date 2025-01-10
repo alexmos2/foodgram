@@ -7,10 +7,10 @@ from .views import (ReceiptViewSet, TagViewSet, IngredientViewSet,
                     UserAvatarViewSet, ReceiptShortLinkView)
 from users.views import CustomUserViewSet
 
-router = routers.DefaultRouter()
-router.register(r'recipes', ReceiptViewSet, basename='recipes')
-router.register(r'tags', TagViewSet, basename='tags')
-router.register(r'ingredients', IngredientViewSet)
+router_v1 = routers.DefaultRouter()
+router_v1.register(r'recipes', ReceiptViewSet, basename='recipes')
+router_v1.register(r'tags', TagViewSet, basename='tags')
+router_v1.register(r'ingredients', IngredientViewSet)
 
 urlpatterns = [
     path('users/me/', CustomUserViewSet.as_view(
@@ -22,7 +22,7 @@ urlpatterns = [
         ReceiptShortLinkView.as_view(),
         name='receipt-get-link'
     ),
-    path('', include(router.urls)),
+    path('', include(router_v1.urls)),
     path('', include('djoser.urls')),
     path(
         'users/me/avatar/', UserAvatarViewSet.as_view(

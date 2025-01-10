@@ -252,21 +252,17 @@ class AddReceiptSerializer(serializers.ModelSerializer):
         ingredients = validated_data.pop('ingredients', [])
         tags = validated_data.pop('tags', [])
         receipt = Receipt.objects.create(**validated_data)
-        if tags and tags != []:
-            receipt.tags.set(tags)
-        if ingredients and ingredients != []:
-            self.create_ingredients(ingredients, receipt)
+        receipt.tags.set(tags)
+        self.create_ingredients(ingredients, receipt)
         return receipt
 
     @transaction.atomic
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('ingredients', [])
         tags = validated_data.pop('tags', [])
-        if ingredients and ingredients != []:
-            instance.ingredients.clear()
-            self.create_ingredients(ingredients, instance)
-        if tags and tags != []:
-            instance.tags.set(tags, clear=True)
+        instance.ingredients.clear()
+        self.create_ingredients(ingredients, instance)
+        instance.tags.set(tags)
         return super().update(instance, validated_data)
 
     def validate(self, data):
@@ -290,6 +286,10 @@ class AddReceiptSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Поле с ингредиентами должно иметь значение'
             )
+        if ingredients == []:
+            raise serializers.ValidationError(
+                'В рецепте должен быть хотя бы один ингредиент'
+            )
         for ingredient in ingredients:
             if not isinstance(ingredient['amount'], int):
                 raise serializers.ValidationError(
@@ -300,6 +300,10 @@ class AddReceiptSerializer(serializers.ModelSerializer):
                 'В рецепте не должно быть повторяющихся ингредиентов'
             )
         tags = data['tags']
+        if not tags:
+            raise serializers.ValidationError(
+                'Поле с тегами должно иметь значение'
+            )
         if tags == []:
             raise serializers.ValidationError(
                 'В рецепте должен быть хотя бы один тег'
@@ -314,6 +318,27 @@ class AddReceiptSerializer(serializers.ModelSerializer):
                 'Поле с временем готовки не может быть пустым'
             )
         return data
+
+
+class AddReceiptToListesSerializer(serializers.Serializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+    receipt = serializers.PrimaryKeyRelatedField(
+        queryset=Receipt.objects.all())
+
+    def validate(self, data):
+        table = self.context.get('table')
+        user = data['user']
+        receipt = data['receipt']
+
+        if table.objects.filter(user=user, receipt=receipt).exists():
+            raise serializers.ValidationError(
+                {'detail': 'Этот рецепт уже добавлен.'})
+
+        return data
+
+    def create(self, validated_data):
+        table = self.context.get('table')
+        return table.objects.create(**validated_data)
 
 
 class ShortReceiptSerializer(serializers.ModelSerializer):

@@ -14,7 +14,7 @@ from .models import (Receipt, Tag, Ingredient, Favorite,
                      IngredientReceipt, ShoppingList,
                      Subscription, User)
 from .serializers import (ReceiptSerializer, TagSerializer,
-                          IngredientSerializer,
+                          IngredientSerializer, AddReceiptToListesSerializer,
                           AddReceiptSerializer, ShortReceiptSerializer,
                           SubscribeSerializer, SubscriptionSerializer,
                           UserAvatarSerializer)
@@ -40,9 +40,11 @@ class ReceiptMixin:
     def add_receipt(self, request, pk, table):
         receipt = get_object_or_404(Receipt, pk=pk)
         user = request.user
-        if table.objects.filter(receipt=receipt, user=user).exists():
-            raise ValidationError({'detail': 'Рецепт уже есть в этом списке'})
-        table.objects.create(receipt=receipt, user=user)
+        data = {'user': user.id, 'receipt': receipt.id}
+        serializer = AddReceiptToListesSerializer(
+            data=data, context={'table': table})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         serializer = ShortReceiptSerializer(receipt)
         return Response(data=serializer.data, status=status.HTTP_201_CREATED)
 
@@ -77,9 +79,6 @@ class UserAvatarViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         user = self.get_object()
         return Response({'avatar': user.avatar.url if user.avatar else None})
-
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
 
     def update(self, request, *args, **kwargs):
         if request.data == {}:
