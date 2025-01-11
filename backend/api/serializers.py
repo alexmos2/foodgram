@@ -63,7 +63,7 @@ class MyUserSerializer(UserSerializer):
         request = self.context.get('request')
         if request is None or request.user.is_anonymous:
             return False
-        return request.user.following.filter(author=obj).exists()
+        return request.user.follower.filter(author=obj).exists()
 
 
 class MyUserCreateSerializer(UserCreateSerializer):
@@ -103,7 +103,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Нельзя подписаться на самого себя!'
             )
-        if Subscription.objects.filter(user=user, author=author).exists():
+        if author.following.filter(user=user).exists():
             raise serializers.ValidationError(
                 'Вы уже подписаны на этого пользователя!'
             )
@@ -138,7 +138,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
-        return request.user.following.filter(author=obj.author).exists()
+        return request.user.follower.filter(author=obj.author).exists()
 
     def get_recipes(self, obj):
         request = self.context.get('request')

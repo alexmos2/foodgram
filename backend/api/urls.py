@@ -15,10 +15,10 @@ router_v1.register(r'ingredients', IngredientViewSet)
 urlpatterns = [
     path('users/me/', CustomUserViewSet.as_view(
         {'get': 'retrieve'})),
-    path('users/<int:pk>/subscribe/', SubscribeView.as_view()),
+    path('users/<int:pk_of_user>/subscribe/', SubscribeView.as_view()),
     path('users/subscriptions/', SubscriptionViewSet.as_view()),
     path(
-        'recipes/<int:pk>/get-link/',
+        'recipes/<int:pk_of_receipt>/get-link/',
         ReceiptShortLinkView.as_view(),
         name='receipt-get-link'
     ),

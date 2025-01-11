@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404
 
 from .models import (Receipt, Tag, Ingredient, Favorite,
                      IngredientReceipt, ShoppingList,
-                     Subscription, User)
+                     User)
 from .serializers import (ReceiptSerializer, TagSerializer,
                           IngredientSerializer, AddReceiptToListesSerializer,
                           AddReceiptSerializer, ShortReceiptSerializer,
@@ -26,8 +26,8 @@ from .pagination import ReceiptPagination
 class ReceiptShortLinkView(APIView):
     permission_classes = (AllowAny,)
 
-    def get(self, request, pk):
-        receipt = get_object_or_404(Receipt, pk=pk)
+    def get(self, request, pk_of_receipt):
+        receipt = get_object_or_404(Receipt, pk=pk_of_receipt)
         if not receipt.short_link:
             receipt.short_link = receipt.generate_short_link()
             receipt.save()
@@ -198,17 +198,12 @@ class SubscriptionViewSet(ListAPIView):
 class SubscribeView(views.APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get_author(self, pk):
-        return get_object_or_404(User, pk=pk)
+    def get_author(self, pk_of_user):
+        return get_object_or_404(User, pk=pk_of_user)
 
-    def post(self, request, pk):
-        author = self.get_author(pk)
+    def post(self, request, pk_of_user):
+        author = self.get_author(pk_of_user)
         user = request.user
-        if user == author:
-            return Response(
-                {'detail': 'Нельзя подписаться на самого себя.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
         serializer = SubscribeSerializer(
             data={'author': author.id, 'user': user.id},
             context={'request': request}
@@ -217,11 +212,10 @@ class SubscribeView(views.APIView):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def delete(self, request, pk):
-        author = self.get_author(pk)
+    def delete(self, request, pk_of_user):
+        author = self.get_author(pk_of_user)
         user = request.user
-        subscription = Subscription.objects.filter(
-            user=user, author=author).first()
+        subscription = author.following.filter(user=user).first()
         if not subscription:
             return Response(
                 {'detail': 'Подписка не существует.'},
